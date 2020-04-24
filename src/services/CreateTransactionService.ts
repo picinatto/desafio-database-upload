@@ -3,8 +3,8 @@ import { getCustomRepository, getRepository } from 'typeorm';
 // import AppError from '../errors/AppError';
 
 import Transaction from '../models/Transaction';
-import TransactionRepository from '../repositories/TransactionsRepository';
 import Category from '../models/Category';
+import TransactionsRepository from '../repositories/TransactionsRepository';
 
 interface Request {
   title: string;
@@ -20,7 +20,7 @@ class CreateTransactionService {
     type,
     category,
   }: Request): Promise<Transaction> {
-    const transactionRepository = getCustomRepository(TransactionRepository);
+    const transactionsRepository = getCustomRepository(TransactionsRepository);
 
     const categoryRepository = getRepository(Category);
 
@@ -32,17 +32,17 @@ class CreateTransactionService {
       categoryObject = categoryRepository.create({
         title: category,
       });
-      categoryRepository.save(categoryObject);
+      await categoryRepository.save(categoryObject);
     }
 
-    const transaction = transactionRepository.create({
+    const transaction = transactionsRepository.create({
       title,
       value,
       type,
-      category_id: categoryObject?.id,
+      category: categoryObject,
     });
 
-    await transactionRepository.save(transaction);
+    await transactionsRepository.save(transaction);
 
     return transaction;
   }
