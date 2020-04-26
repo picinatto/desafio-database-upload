@@ -53,8 +53,13 @@ transactionsRouter.post(
   '/import',
   upload.single('transactions'),
   async (request, response) => {
-    // const importTransactionsService = new ImportTransactionsService();
-    // const import = importTransactionsService.execute(transactionsFileName: request.file.filename);
+    const importTransactionsService = new ImportTransactionsService();
+
+    const transactions = await importTransactionsService.execute({
+      transactionsFilePath: request.file.path,
+    });
+
+    return response.json(transactions);
   },
 );
 
