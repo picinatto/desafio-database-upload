@@ -1,8 +1,10 @@
 import fs from 'fs';
 import csvParse from 'csv-parse';
+import { getRepository, In } from 'typeorm';
 
-import CreateTransactionService from './CreateTransactionService';
+import Category from '../models/Category';
 import Transaction from '../models/Transaction';
+import CreateTransactionService from './CreateTransactionService';
 
 interface Request {
   transactionsFilePath: string;
@@ -12,13 +14,15 @@ interface CSVTransaction {
   title: string;
   type: 'income' | 'outcome';
   value: number;
-  caterogy: string;
+  category: string;
 }
 
 class ImportTransactionsService {
   public async execute({
     transactionsFilePath,
   }: Request): Promise<Transaction[]> {
+    const createTransactionService = new CreateTransactionService();
+
     const readCSVStream = fs.createReadStream(transactionsFilePath);
 
     const parseStream = csvParse({
@@ -27,10 +31,8 @@ class ImportTransactionsService {
 
     const parseCSV = readCSVStream.pipe(parseStream);
 
-    const createTransactionService = new CreateTransactionService();
-
-    const transactions: CSVTransaction[] = [];
-    // const categories: string[] = [];
+    const transactions_csv: CSVTransaction[] = [];
+    const transactions: Transaction[] = [];
 
     parseCSV.on('data', async line => {
       const [title, type, value, category] = line.map((cell: string) =>
@@ -38,30 +40,23 @@ class ImportTransactionsService {
       );
 
       if (!title || !type || !value) return;
-      transactions.push({ title, type, value, category });
+
+      transactions_csv.push({ title, type, value, category });
     });
 
-    await new Promise(resolve => {
-      parseCSV.on('end', resolve);
-    });
+    await new Promise(resolve => parseCSV.on('end', resolve));
 
-    // console.log(transactions);
+    for await (const transaction of transactions_csv) {
+      await createTransactionService.execute({
+        title: transaction.title,
+        value: transaction.value,
+        type: transaction.type,
+        category: transaction.category,
+      });
+      await transactions.push(transaction);
+    }
 
-    // transactions.map()
-    transactions.map(async function (transaction) {
-      // console.log(transaction);
-      if (transaction.title && transaction.type && transaction.value) {
-        console.log(transaction.title);
-        const transactionAdded = await createTransactionService.execute({
-          title: transaction.title,
-          value: transaction.value,
-          type: transaction.type,
-          category: transaction.caterogy,
-        });
-      }
-    });
-
-    // return { transactions };
+    return { transactions };
   }
 }
 export default ImportTransactionsService;
