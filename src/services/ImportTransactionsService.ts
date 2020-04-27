@@ -2,7 +2,7 @@ import fs from 'fs';
 import csvParse from 'csv-parse';
 import { getRepository, In } from 'typeorm';
 
-import Category from '../models/Category';
+// import Category from '../models/Category';
 import Transaction from '../models/Transaction';
 import CreateTransactionService from './CreateTransactionService';
 
@@ -46,17 +46,17 @@ class ImportTransactionsService {
 
     await new Promise(resolve => parseCSV.on('end', resolve));
 
-    for await (const transaction of transactions_csv) {
-      await createTransactionService.execute({
-        title: transaction.title,
-        value: transaction.value,
-        type: transaction.type,
-        category: transaction.category,
+    for await (const transaction_csv of transactions_csv) {
+      const transaction = await createTransactionService.execute({
+        title: transaction_csv.title,
+        value: transaction_csv.value,
+        type: transaction_csv.type,
+        category: transaction_csv.category,
       });
-      await transactions.push(transaction);
+      transactions.push(transaction);
     }
 
-    return { transactions };
+    return transactions;
   }
 }
 export default ImportTransactionsService;
