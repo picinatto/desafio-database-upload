@@ -1,6 +1,5 @@
 import fs from 'fs';
 import csvParse from 'csv-parse';
-import { getRepository, In } from 'typeorm';
 
 // import Category from '../models/Category';
 import Transaction from '../models/Transaction';
